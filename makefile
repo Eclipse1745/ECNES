@@ -3,7 +3,7 @@ CXX = g++
 CXXFLAGS = -std=c++17 -O2
 LDFLAGS = -lraylib
 
-TARGET = NESemu
+TARGET = ECNES
 
 all:
 	$(CXX) $(CXXFLAGS) $(SRCS) -o $(TARGET) $(LDFLAGS)
