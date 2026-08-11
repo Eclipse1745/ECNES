@@ -1,4 +1,4 @@
-# NESemu
+# ECNES
 
 A work-in-progress NES emulator, built for fun and to learn how the hardware actually works. Not cycle-accurate.
 
