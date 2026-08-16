@@ -13,7 +13,7 @@ A work-in-progress NES emulator, built for fun and to learn how the hardware act
 
 ```
 make
-./NESemu
+./ECNES
 ```
 
 ## Controls (debug demo)
