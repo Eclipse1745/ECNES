@@ -17,6 +17,14 @@ public:
   bool ppuRead(uint16_t addr, uint8_t &data);
   bool ppuWrite(uint16_t addr, uint8_t data);
 
+public:
+  enum MIRROR {
+    HORIZONTAL,
+    VERTICAL,
+    ONESCREEN_LO,
+    ONESCREEN_HI,
+  } mirror = HORIZONTAL;
+
 private:
   std::vector<uint8_t> vPRGMemory;
   std::vector<uint8_t> vCHRMemory;

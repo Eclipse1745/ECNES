@@ -8,7 +8,7 @@ public:
   PPU2C02();
 
   uint8_t nameTable[2][1024];
-  uint8_t PaletteTable[3];
+  uint8_t PaletteTable[32];
   uint8_t PatternTable[2][4096];
 
   // Communication with Main Bus
@@ -22,6 +22,7 @@ public:
 public: // System Interface
   void ConnectCartridge(const std::shared_ptr<Cartridge> &cartridge);
   void clock();
+  void reset();
 
   bool nmi;
 
@@ -80,9 +81,37 @@ private:
     uint8_t reg;
   } control;
 
+  union loopy_register {
+    struct {
+
+      uint16_t coarse_x : 5;
+      uint16_t coarse_y : 5;
+      uint16_t nametable_x : 1;
+      uint16_t nametable_y : 1;
+      uint16_t fine_y : 3;
+      uint16_t unused : 1;
+    };
+
+    uint16_t reg = 0x0000;
+  };
+
+  loopy_register vram_addr;
+  loopy_register tram_addr;
+
+  uint8_t fine_x = 0x00;
+
   uint8_t address_latch = 0x00;
   uint8_t ppu_data_buffer = 0x00;
-  uint16_t ppu_address = 0x00;
+
+  // Background rendering
+  uint8_t bg_next_tile_id = 0x00;
+  uint8_t bg_next_tile_attrib = 0x00;
+  uint8_t bg_next_tile_lsb = 0x00;
+  uint8_t bg_next_tile_msb = 0x00;
+  uint16_t bg_shifter_pattern_lo = 0x0000;
+  uint16_t bg_shifter_pattern_hi = 0x0000;
+  uint16_t bg_shifter_attrib_lo = 0x0000;
+  uint16_t bg_shifter_attrib_hi = 0x0000;
 
 private:
   Color palScreen[0x40];

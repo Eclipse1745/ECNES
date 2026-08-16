@@ -8,7 +8,9 @@ Bus::Bus() {
 }
 
 void Bus::reset() {
+
   cpu.reset();
+  ppu.reset();
   nSystemClockCounter = 0;
 }
 

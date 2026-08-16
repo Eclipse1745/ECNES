@@ -1,3 +1,4 @@
+#include <iostream>
 #include <memory>
 #include <string>
 
@@ -30,19 +31,40 @@ struct PixelBuffer {
   }
 };
 
-int main() {
+int main(int argc, char *argv[]) {
+
+  std::string romPath = "TestRoms/nestest.nes"; // fallback if no argument given
+  int nScale = 1; // fallback if no scale argument given
+
+  if (argc >= 2) {
+    romPath = argv[1];
+  } else {
+    std::cout << "No ROM specified, defaulting to " << romPath
+              << " (usage: " << argv[0] << " <rom.nes> [scale]) \n";
+  }
+
+  if (argc >= 3) {
+    nScale = std::stoi(argv[2]);
+    if (nScale < 1) {
+      std::cerr << "Scale must be at least 1, got " << nScale
+                << " -- using 1 instead\n";
+      nScale = 1;
+    }
+  } else {
+    std::cout << "No scale specified, defaulting to " << nScale
+              << " (usage: " << argv[0] << " <rom.nes> [scale])\n";
+  }
+
   const int nOriginalW = 780;
   const int nOriginalH = 480;
-  const int nScale = 1;
 
-  InitWindow(nOriginalW * nScale, nOriginalH * nScale,
-             "6502/2C02 Demonstration");
+  InitWindow(nOriginalW * nScale, nOriginalH * nScale, "PPU/CPU Debugger");
   SetTargetFPS(60);
 
   RenderTexture2D target = LoadRenderTexture(nOriginalW, nOriginalH);
 
   Bus nes;
-  auto cart = std::make_shared<Cartridge>("TestRoms/nestest.nes");
+  auto cart = std::make_shared<Cartridge>(romPath);
   nes.InsertCartridge(cart);
   std::map<uint16_t, std::string> mapAsm = nes.cpu.disassemble(0x0000, 0xFFFF);
   nes.reset();

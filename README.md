@@ -5,15 +5,27 @@ A work-in-progress NES emulator, built for fun and to learn how the hardware act
 ## Status
 
 - **CPU (Ricoh 2A03 / 6502 core)** — passes Klaus Dormann's functional and interrupt test suites.
-- **PPU (Ricoh 2C02)** — registers, VRAM/OAM/palette memory, and VBlank/NMI timing implemented. Background and sprite rendering (and sprite-0-hit) not yet implemented — this is the current blocker for running most commercial games.
+- **PPU (Ricoh 2C02)** — registers, VRAM/OAM/palette memory, VBlank/NMI timing, and background rendering (nametables, attribute tables, scrolling) implemented. Sprite rendering and sprite-0-hit are not yet implemented.
 - **Mappers** — only Mapper 0 (NROM) is implemented, so only NROM-based ROMs will load correctly.
-- **Renderer** — originally built on [olcPixelGameEngine](https://github.com/OneLoneCoder/olcPixelGameEngine), migrating to [raylib](https://www.raylib.com/).
+- **Renderer** — built on [raylib](https://www.raylib.com/).
 
 ## Building
 
 ```
 make
-./ECNES
+```
+
+## Usage
+
+```
+./ECNES <rom.nes> [scale]
+```
+
+- `rom.nes` — path to an iNES ROM file. Defaults to `TestRoms/nestest.nes` if omitted.
+- `scale` — integer window scale factor. Defaults to `1` if omitted.
+
+```
+./ECNES smb.nes 2
 ```
 
 ## Controls (debug demo)
