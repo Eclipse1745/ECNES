@@ -90,7 +90,7 @@ const Color *PPU2C02::GetPatternTable(uint8_t i, uint8_t pallete) {
         uint8_t tile_msb = ppuRead(i * 0x1000 + offset + row + 8);
 
         for (uint16_t col = 0; col < 8; col++) {
-          uint8_t pixel = (tile_lsb & 0x01) + (tile_msb & 0x01);
+          uint8_t pixel = ((tile_lsb & 0x01) << 1) | (tile_msb & 0x01);
           tile_lsb >>= 1;
           tile_msb >>= 1;
 
@@ -122,6 +122,7 @@ uint8_t PPU2C02::cpuRead(uint16_t addr, bool rdonly) {
   case 0x0003: // OAM Address
     break;
   case 0x0004: // OAM Data
+    data = pOAM[oam_addr];
     break;
   case 0x0005: // Scroll
     break;
@@ -155,8 +156,10 @@ void PPU2C02::cpuWrite(uint16_t addr, uint8_t data) {
 
     break;
   case 0x0003: // OAM Address
+    oam_addr = data;
     break;
   case 0x0004: // OAM Data
+    pOAM[oam_addr] = data;
     break;
   case 0x0005: // Scroll
     if (address_latch == 0) {

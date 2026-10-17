@@ -132,6 +132,16 @@ int main(int argc, char *argv[]) {
   while (!WindowShouldClose()) {
     float fElapsedTime = GetFrameTime();
 
+    nes.controller[0] = 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_X) ? 0x80 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_Z) ? 0x40 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_A) ? 0x20 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_S) ? 0x10 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_UP) ? 0x08 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_DOWN) ? 0x04 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_LEFT) ? 0x02 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_RIGHT) ? 0x01 : 0x00;
+
     if (bEmulationRun) {
       if (fResidualTime > 0.0f) {
         fResidualTime -= fElapsedTime;
@@ -177,7 +187,17 @@ int main(int argc, char *argv[]) {
     ClearBackground(colBg);
 
     DrawCpu(516, 2);
-    DrawCode(516, 72, 26);
+    // DrawCode(516, 72, 26);
+
+    // Draw OAM Contents (first 26 out of 64)
+    for (int i = 0; i < 26; i++) {
+      std::string s = Hex(i, 2) + ": (" +
+                      std::to_string(nes.ppu.pOAM[i * 4 + 3]) + ", " +
+                      std::to_string(nes.ppu.pOAM[i * 4 + 0]) + ") " +
+                      "ID: " + Hex(nes.ppu.pOAM[i * 4 + 1], 2) +
+                      " AT: " + Hex(nes.ppu.pOAM[i * 4 + 2], 2);
+      DrawText(s.c_str(), 516, 72 + i * 10, 10, WHITE);
+    }
 
     const int nSwatchSize = 6;
     for (int p = 0; p < 8; p++)

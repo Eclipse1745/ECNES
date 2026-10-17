@@ -24,6 +24,7 @@ public: // System Interface
   void clock();
   void reset();
 
+  uint8_t *pOAM = (uint8_t *)OAM;
   bool nmi;
 
 private:
@@ -113,7 +114,17 @@ private:
   uint16_t bg_shifter_attrib_lo = 0x0000;
   uint16_t bg_shifter_attrib_hi = 0x0000;
 
+  uint8_t oam_addr = 0x00;
+
 private:
+  struct ObjectAttributeMemory {
+    uint8_t y;       // Y position of sprite
+    uint8_t tile_id; // tile id from pattern memory
+    uint8_t
+        attribute; // contains flag that define how sprite should be rendered;
+    uint8_t x;     // X position of sprite
+  } OAM[64];
+
   Color palScreen[0x40];
   Color sprScreen[256 * 240];
   Color sprNameTable[2][256 * 240];

@@ -16,6 +16,8 @@ public: // Devices on Bus
 
   std::shared_ptr<Cartridge> cart;
 
+  uint8_t controller[2];
+
 public:
   void cpuWrite(uint16_t addr, uint8_t data);
   uint8_t cpuRead(uint16_t addr, bool bReadOnly = false);
@@ -27,4 +29,13 @@ public: // System Interface
 
 private:
   uint32_t nSystemClockCounter = 0;
+
+  uint8_t controller_state[2];
+
+  uint8_t dma_page = 0x00;
+  uint8_t dma_addr = 0x00;
+  uint8_t dma_data = 0x00;
+
+  bool dma_transfer = false;
+  bool dma_dummy = true;
 };
