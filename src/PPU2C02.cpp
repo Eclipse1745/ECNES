@@ -1,5 +1,5 @@
 #include "PPU2C02.hpp"
-
+#include <cstring>
 PPU2C02::PPU2C02() {
   palScreen[0x00] = Color{84, 84, 84, 255};
   palScreen[0x01] = Color{0, 30, 116, 255};
@@ -316,6 +316,8 @@ void PPU2C02::ConnectCartridge(const std::shared_ptr<Cartridge> &cartridge) {
 }
 
 void PPU2C02::clock() {
+
+  // Background rendering ---------------------------------------------------
   auto IncrementScrollX = [&]() {
     if (mask.render_background || mask.render_sprites) {
       if (vram_addr.coarse_x == 31) {
@@ -378,6 +380,17 @@ void PPU2C02::clock() {
       bg_shifter_attrib_lo <<= 1;
       bg_shifter_attrib_hi <<= 1;
     }
+
+    if (mask.render_sprites && cycle >= 1 && cycle < 258) {
+      for (int i = 0; i < sprite_count; i++) {
+        if (spriteScanline[i].x > 0) {
+          spriteScanline[i].x--;
+        } else {
+          sprite_shifter_pattern_lo[i] <<= 1;
+          sprite_shifter_pattern_hi[i] <<= 1;
+        }
+      }
+    }
   };
 
   if (scanline >= -1 && scanline < 240) {
@@ -387,6 +400,12 @@ void PPU2C02::clock() {
 
     if (scanline == -1 && cycle == 1) {
       status.vertical_blank = 0;
+      status.sprite_zero_hit = 0;
+      status.sprite_overflow = 0;
+      for (int i = 0; i > sprite_count; i++) {
+        sprite_shifter_pattern_lo[i] = 0;
+        sprite_shifter_pattern_hi[i] = 0;
+      }
     }
 
     if ((cycle >= 2 && cycle < 258) || (cycle >= 321 && cycle < 338)) {
@@ -446,6 +465,116 @@ void PPU2C02::clock() {
     }
   }
 
+  // Foreground rendering
+  // --------------------------------------------------------------------------
+  if (cycle == 257 && scanline >= 0) {
+    std::memset(spriteScanline, 0xFF, 8 * sizeof(ObjectAttributeMemory));
+    sprite_count = 0;
+    uint8_t nOAMEntry = 0;
+    bSpriteZeroHitPossible = false;
+    while (nOAMEntry < 64 && sprite_count < 9) {
+      int16_t diff = ((int16_t)scanline - (int16_t)OAM[nOAMEntry].y);
+      if (diff >= 0 && diff < (control.sprite_size ? 16 : 8)) {
+        if (sprite_count < 8) {
+
+          if (nOAMEntry == 0) {
+            bSpriteZeroHitPossible = true;
+          }
+          std::memcpy(&spriteScanline[sprite_count], &OAM[nOAMEntry],
+                      sizeof(ObjectAttributeMemory));
+        }
+
+        sprite_count++;
+      }
+      nOAMEntry++;
+    }
+    status.sprite_overflow = (sprite_count > 8);
+  }
+
+  if (cycle == 340) {
+    for (uint8_t i = 0; i < sprite_count; i++) {
+      uint8_t sprite_pattern_bits_lo, sprite_pattern_bits_hi;
+      uint16_t sprite_pattern_addr_lo, sprite_pattern_addr_hi;
+
+      if (!control.sprite_size) {
+        // 8x8 Sprite Mode
+        if (!(spriteScanline[i].attribute & 0x80)) {
+          // Sprite Not Flipped Vertically
+          sprite_pattern_addr_lo = (control.pattern_sprite << 12) |
+                                   (spriteScanline[i].tile_id << 4) |
+                                   (scanline - spriteScanline[i].y);
+        } else {
+          // Sprite Vertically Flipped
+          sprite_pattern_addr_lo = (control.pattern_sprite << 12) |
+                                   (spriteScanline[i].tile_id << 4) |
+                                   (7 - (scanline - spriteScanline[i].y));
+        }
+
+      } else {
+        // 8x16 Sprite Mode
+        //
+        if (!(spriteScanline[i].attribute & 0x80)) {
+          // Sprite Not Flipped Vertically
+          if (scanline - spriteScanline[i].y < 8) {
+
+            // Reading Top half Tile
+            sprite_pattern_addr_lo =
+                ((spriteScanline[i].tile_id & 0x01) << 12) |
+                ((spriteScanline[i].tile_id & 0xFE) << 4) |
+                ((scanline - spriteScanline[i].y) & 0x07);
+
+          } else {
+            // Reading bottom half Tile
+            sprite_pattern_addr_lo =
+                ((spriteScanline[i].tile_id & 0x01) << 12) |
+                (((spriteScanline[i].tile_id & 0xFE) + 1) << 4) |
+                ((scanline - spriteScanline[i].y) & 0x07);
+          }
+        } else {
+
+          // Sprite Vertically Flipped
+          if (scanline - spriteScanline[i].y < 8) {
+            // Reading Top half Tile
+            sprite_pattern_addr_lo =
+                ((spriteScanline[i].tile_id & 0x01) << 12) |
+                ((spriteScanline[i].tile_id & 0xFE) << 4) |
+                ((7 - (scanline - spriteScanline[i].y)) & 0x07);
+
+          } else {
+            // Reading bottom half Tile
+            sprite_pattern_addr_lo =
+                ((spriteScanline[i].tile_id & 0x01) << 12) |
+                (((spriteScanline[i].tile_id & 0xFE) + 1) << 4) |
+                ((7 - (scanline - spriteScanline[i].y)) & 0x07);
+          }
+        }
+      }
+      sprite_pattern_addr_hi = sprite_pattern_addr_lo + 8;
+      sprite_pattern_bits_lo = ppuRead(sprite_pattern_addr_lo);
+      sprite_pattern_bits_hi = ppuRead(sprite_pattern_addr_hi);
+
+      if (spriteScanline[i].attribute & 0x40) {
+        // This little lambda function "flips" a byte
+        // so 0b11100000 becomes 0b00000111. It's very
+        // clever, and stolen completely from here:
+        // https://stackoverflow.com/a/2602885
+        auto flipbyte = [](uint8_t b) {
+          b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+          b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+          b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+          return b;
+        };
+
+        // Flip Patterns Horizontally
+        sprite_pattern_bits_lo = flipbyte(sprite_pattern_bits_lo);
+        sprite_pattern_bits_hi = flipbyte(sprite_pattern_bits_hi);
+      }
+
+      sprite_shifter_pattern_lo[i] = sprite_pattern_bits_lo;
+      sprite_shifter_pattern_hi[i] = sprite_pattern_bits_hi;
+    }
+  }
+
   if (scanline == 240) {
   }
 
@@ -465,7 +594,6 @@ void PPU2C02::clock() {
 
     uint8_t p0_pixel = (bg_shifter_pattern_lo & bit_mux) > 0;
     uint8_t p1_pixel = (bg_shifter_pattern_hi & bit_mux) > 0;
-
     bg_pixel = (p1_pixel << 1) | p0_pixel;
 
     uint8_t bg_pal0 = (bg_shifter_attrib_lo & bit_mux) > 0;
@@ -473,9 +601,81 @@ void PPU2C02::clock() {
     bg_palette = (bg_pal1 << 1) | bg_pal0;
   }
 
+  uint8_t fg_pixel = 0x00;
+  uint8_t fg_palette = 0x00;
+  uint8_t fg_priority = 0x00;
+
+  if (mask.render_sprites) {
+
+    bSpriteZeroBeingRendered = false;
+
+    for (uint8_t i = 0; i < sprite_count; i++) {
+      if (spriteScanline[i].x == 0) {
+        uint8_t fg_pixel_lo = (sprite_shifter_pattern_lo[i] & 0x80) > 0;
+        uint8_t fg_pixel_hi = (sprite_shifter_pattern_hi[i] & 0x80) > 0;
+        fg_pixel = (fg_pixel_hi << 1) | fg_pixel_lo;
+
+        fg_palette = (spriteScanline[i].attribute & 0x03) + 0x04;
+        fg_priority = (spriteScanline[i].attribute & 0x20) == 0;
+
+        if (fg_pixel != 0) {
+          if (i == 0) { // is this sprite zero?
+            bSpriteZeroBeingRendered = true;
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  uint8_t pixel = 0x00;   // Final pixel
+  uint8_t palette = 0x00; // Final palette
+
+  if (bg_pixel == 0 && fg_pixel == 0) {
+    pixel = 0x00;
+    palette = 0x00;
+  }
+
+  else if (bg_pixel == 0 && fg_pixel > 0) {
+    // The background pixel is transparent
+    // The foreground pixel is visible
+    pixel = fg_pixel;
+    palette = fg_palette;
+
+  } else if (bg_pixel > 0 && fg_pixel == 0) {
+    // The background pixel is visible
+    // The foreground pixel is transparent
+    pixel = bg_pixel;
+    palette = bg_palette;
+  }
+
+  else if (bg_pixel > 0 && fg_pixel > 0) {
+    if (fg_priority) {
+      pixel = fg_pixel;
+      palette = fg_palette;
+    } else {
+      pixel = bg_pixel;
+      palette = bg_palette;
+    }
+
+    if (bSpriteZeroHitPossible && bSpriteZeroBeingRendered) {
+      if (mask.render_background & mask.render_sprites) {
+        if (~(mask.render_background_left | mask.render_sprites_left)) {
+          if (cycle >= 9 && cycle < 258) {
+            status.sprite_zero_hit = 1;
+          }
+        } else {
+          if (cycle >= 1 && cycle < 258) {
+            status.sprite_zero_hit = 1;
+          }
+        }
+      }
+    }
+  }
+
   if (cycle - 1 >= 0 && cycle - 1 < 256 && scanline >= 0 && scanline < 240) {
     sprScreen[scanline * 256 + (cycle - 1)] =
-        GetColourFromPaletteRam(bg_palette, bg_pixel);
+        GetColourFromPaletteRam(palette, pixel);
   }
   cycle++;
   if (cycle >= 341) {

@@ -125,6 +125,14 @@ private:
     uint8_t x;     // X position of sprite
   } OAM[64];
 
+  ObjectAttributeMemory spriteScanline[8];
+  uint8_t sprite_count;
+  uint8_t sprite_shifter_pattern_lo[8];
+  uint8_t sprite_shifter_pattern_hi[8];
+
+  bool bSpriteZeroHitPossible = false;
+  bool bSpriteZeroBeingRendered = false;
+
   Color palScreen[0x40];
   Color sprScreen[256 * 240];
   Color sprNameTable[2][256 * 240];
