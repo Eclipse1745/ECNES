@@ -133,14 +133,14 @@ int main(int argc, char *argv[]) {
     float fElapsedTime = GetFrameTime();
 
     nes.controller[0] = 0x00;
-    nes.controller[0] |= IsKeyDown(KEY_X) ? 0x80 : 0x00;
-    nes.controller[0] |= IsKeyDown(KEY_Z) ? 0x40 : 0x00;
-    nes.controller[0] |= IsKeyDown(KEY_A) ? 0x20 : 0x00;
-    nes.controller[0] |= IsKeyDown(KEY_S) ? 0x10 : 0x00;
-    nes.controller[0] |= IsKeyDown(KEY_UP) ? 0x08 : 0x00;
-    nes.controller[0] |= IsKeyDown(KEY_DOWN) ? 0x04 : 0x00;
-    nes.controller[0] |= IsKeyDown(KEY_LEFT) ? 0x02 : 0x00;
-    nes.controller[0] |= IsKeyDown(KEY_RIGHT) ? 0x01 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_O) ? 0x80 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_P) ? 0x40 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_RIGHT_SHIFT) ? 0x20 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_ENTER) ? 0x10 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_W) ? 0x08 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_S) ? 0x04 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_A) ? 0x02 : 0x00;
+    nes.controller[0] |= IsKeyDown(KEY_D) ? 0x01 : 0x00;
 
     if (bEmulationRun) {
       if (fResidualTime > 0.0f) {
