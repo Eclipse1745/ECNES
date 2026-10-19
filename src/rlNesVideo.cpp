@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
       nes.cpu.reset();
     if (IsKeyPressed(KEY_SPACE))
       bEmulationRun = !bEmulationRun;
-    if (IsKeyPressed(KEY_P))
+    if (IsKeyPressed(KEY_TAB))
       selectedPalette = (selectedPalette + 1) & 0x07;
 
     screenBuf.Update(nes.ppu.GetScreen());

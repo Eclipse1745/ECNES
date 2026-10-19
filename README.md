@@ -51,7 +51,7 @@ make
 | `C` | Step one CPU instruction |
 | `F` | Step one full frame |
 | `R` | Reset the CPU |
-| `P` | Cycle the selected palette |
+| `TAB` | Cycle the selected palette |
 
 ## Credits
 
