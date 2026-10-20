@@ -6,7 +6,8 @@ A work-in-progress NES emulator, built for fun and to learn how the hardware act
 
 - **CPU (Ricoh 2A03 / 6502 core)** — passes Klaus Dormann's functional and interrupt test suites.
 - **PPU (Ricoh 2C02)** — registers, VRAM/OAM/palette memory, VBlank/NMI timing, background rendering (nametables, attribute tables, scrolling) and sprite rendering, sprite-0-hit implemented.
-- **Mappers** — only Mapper 0 (NROM) is implemented, so only NROM-based ROMs will load correctly.
+- **Audio** — working.
+- **Mappers** — only Mapper 0 (NROM) is implemented, so only NROM-based ROMs will load correctly. More mappers may come in the future.
 - **Renderer** — built on [raylib](https://www.raylib.com/).
 
 ## Building
@@ -47,11 +48,13 @@ make
 
 | Key | Action |
 |---|---|
+| `H` | Toggle the debug view on/off (off = game only, fills the window) |
 | `Space` | Toggle emulation running / paused |
 | `C` | Step one CPU instruction |
 | `F` | Step one full frame |
 | `R` | Reset the CPU |
 | `TAB` | Cycle the selected palette |
+| `L` | Switch the side panel between OAM and disassembly |
 
 ## Credits
 
